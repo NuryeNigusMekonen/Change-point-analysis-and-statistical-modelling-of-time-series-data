@@ -2,10 +2,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats as stats
 import arviz as az
+import pandas as pd
 
-def plot_price_and_log_returns(df):
+def plot_price_and_log_returns(df: pd.DataFrame):
     """
-    Plot Brent Oil Price and its Log Returns over time.
+    Plot Brent Oil Price and its Log Returns.
+
+    Args:
+        df (pd.DataFrame): Must contain 'Date', 'Price', and 'Log_Return' columns.
     """
     fig, axs = plt.subplots(2, 1, figsize=(14, 6))
 
@@ -22,20 +26,24 @@ def plot_price_and_log_returns(df):
     plt.tight_layout()
     plt.show()
 
-def plot_trace_summary(trace):
+
+def plot_trace_summary(trace: az.InferenceData):
     """
-    Plot trace and summary statistics using ArviZ from a PyMC v4 model.
+    Plot trace and posterior summaries for key parameters.
+
+    Args:
+        trace (az.InferenceData): MCMC samples from PyMC.
     """
     if not isinstance(trace, az.InferenceData):
         raise TypeError("Expected ArviZ InferenceData. Use `return_inferencedata=True` in pm.sample().")
 
-    # Check which variables are present
+    # Determine which vars are available
     available_vars = list(trace.posterior.data_vars)
     expected_vars = ["tau", "mu_1", "mu_2", "sigma"]
     present_vars = [v for v in expected_vars if v in available_vars]
 
     if not present_vars:
-        raise ValueError(f"None of the expected vars {expected_vars} found in trace.")
+        raise ValueError(f"No expected variables found in trace: {expected_vars}")
 
     az.plot_trace(trace, var_names=present_vars)
     plt.tight_layout()
@@ -46,33 +54,29 @@ def plot_trace_summary(trace):
     return summary
 
 
-def plot_tau_posterior(trace, dates):
+def plot_tau_posterior(trace: az.InferenceData, dates: pd.Series) -> pd.Timestamp:
     """
-    Plot the posterior distribution of the change point τ.
+    Plot the posterior distribution of τ (change point) and return most likely date.
 
     Args:
-        trace (arviz.InferenceData): Posterior samples
-        dates (pd.Series): Corresponding dates to index
-
-    Returns:
-        pd.Timestamp: Date corresponding to the most probable change point
-    """
-    if not isinstance(trace, az.InferenceData):
-        raise TypeError("Expected ArviZ InferenceData.")
-
-    tau_samples = trace.posterior["tau"].values.flatten()
+        trace (az.InferenceData): Posterior samples from PyMC.
+        dates (pd.Series): Date series corresponding to the time series index.
     
+    Returns:
+        pd.Timestamp: The most probable change point date.
+    """
+    tau_samples = trace.posterior["tau"].values.flatten()
+
     plt.figure(figsize=(10, 4))
     plt.hist(tau_samples, bins=50, color='skyblue', edgecolor='k')
-    mode_tau = stats.mode(tau_samples, keepdims=True)[0][0]
+    mode_tau = stats.mode(tau_samples, keepdims=True).mode[0]
 
     plt.axvline(mode_tau, color='red', linestyle='--', label=f"Most Likely τ (Index {mode_tau})")
     plt.legend()
     plt.title("Posterior Distribution of Change Point τ")
-    plt.xlabel("Index (Days)")
+    plt.xlabel("Index")
     plt.ylabel("Frequency")
     plt.grid(True)
     plt.show()
 
-    return dates[int(mode_tau)]
-
+    return dates.iloc[int(mode_tau)]

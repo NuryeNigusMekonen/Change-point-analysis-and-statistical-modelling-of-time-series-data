@@ -1,53 +1,69 @@
 import pymc as pm
 import numpy as np
 import logging
+import arviz as az
 
 logger = logging.getLogger(__name__)
 
-def build_change_point_model(data):
+def build_change_point_model(data: np.ndarray) -> pm.Model:
     """
-    Build Bayesian change point model with separate means and variances before and after a change point.
+    Build a Bayesian change point model using PyMC with separate means and stds before and after τ.
+    
     Args:
-        data (np.array): 1D array of observations.
+        data (np.ndarray): 1D array of time series data (e.g., log returns).
+    
     Returns:
-        pm.Model: PyMC model object.
+        pm.Model: The PyMC model object.
     """
     n = len(data)
     idx = np.arange(n)
 
     with pm.Model() as model:
-        # Discrete change point (tau)
+        # Discrete change point τ
         tau = pm.DiscreteUniform("tau", lower=5, upper=n - 5)
 
-        # Separate means and stds before and after change
-        mu_1 = pm.Normal("mu_1", mu=np.mean(data), sigma=np.std(data) * 2)
-        mu_2 = pm.Normal("mu_2", mu=np.mean(data), sigma=np.std(data) * 2)
+        # Priors for means
+        mu_1 = pm.Normal("mu_1", mu=np.mean(data), sigma=2 * np.std(data))
+        mu_2 = pm.Normal("mu_2", mu=np.mean(data), sigma=2 * np.std(data))
 
+        # Priors for standard deviations
         sigma_1 = pm.HalfNormal("sigma_1", sigma=np.std(data))
         sigma_2 = pm.HalfNormal("sigma_2", sigma=np.std(data))
 
-        # Piecewise parameters
-        mu = pm.math.switch(tau >= idx, mu_1, mu_2)
-        sigma = pm.math.switch(tau >= idx, sigma_1, sigma_2)
+        # Switch mean and sigma based on τ
+        mu = pm.Deterministic("mu", pm.math.switch(idx < tau, mu_1, mu_2))
+        sigma = pm.Deterministic("sigma", pm.math.switch(idx < tau, sigma_1, sigma_2))
 
         # Likelihood
-        obs = pm.Normal("obs", mu=mu, sigma=sigma, observed=data)
+        pm.Normal("obs", mu=mu, sigma=sigma, observed=data)
 
-    logger.info("Enhanced Bayesian change point model built.")
+    logger.info("PyMC change point model built.")
     return model
 
 
-
-def sample_model(model, draws=3000, tune=1500, target_accept=0.95):
+def sample_model(
+    model: pm.Model,
+    draws: int = 3000,
+    tune: int = 1500,
+    target_accept: float = 0.95
+) -> az.InferenceData:
     """
-    Sample posterior using MCMC.
+    Run MCMC sampling for the given model.
+    
+    Args:
+        model (pm.Model): PyMC model to sample.
+        draws (int): Number of samples to draw.
+        tune (int): Number of tuning steps.
+        target_accept (float): Target acceptance rate.
+    
     Returns:
-        arviz.InferenceData: Posterior samples and diagnostics.
+        az.InferenceData: Posterior samples.
     """
     try:
         with model:
-            trace = pm.sample(draws=draws, tune=tune, target_accept=target_accept, return_inferencedata=True)
-        logger.info("Sampling completed successfully.")
+            trace = pm.sample(draws=1000, tune=500, cores=4, target_accept=0.9, return_inferencedata=True)
+
+        logger.info("Sampling completed.")
         return trace
     except Exception as e:
         logger.error(f"Sampling failed: {e}")
