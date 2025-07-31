@@ -19,53 +19,39 @@ def associate_event(change_date, events_df):
     closest = events_df.loc[events_df["Delta"].idxmin()]
     return closest.to_dict()
 
-def associate_multiple_events(change_dates, events_df):
+
+def extract_single_change_point(trace: az.InferenceData, date_index: pd.Series) -> pd.Timestamp:
     """
-    Map a list of change point dates to their closest events.
+    Extract the most probable single change point from the posterior.
 
     Args:
-        change_dates (List[pd.Timestamp]): List of change point dates.
-        events_df (pd.DataFrame): Event dataframe.
+        trace (arviz.InferenceData): PyMC trace with 'tau' variable.
+        date_index (pd.Series): Date/time index for the observations.
 
     Returns:
-        List[dict]: List of event dicts.
+        pd.Timestamp: Most probable change point date.
     """
-    return [associate_event(cd, events_df) for cd in change_dates]
+    tau_samples = trace.posterior["tau"].values  # shape: (chains, draws)
+    tau_mean = tau_samples.mean(axis=(0, 1))     # average over chains and draws
+    tau_idx = int(round(tau_mean))
+    return date_index.iloc[tau_idx]
 
-def extract_multiple_change_points(trace, date_index, num_changes=2):
+
+def quantify_impact(trace: az.InferenceData):
     """
-    Extract multiple change points from posterior.
+    Quantify change in mean parameters before and after the single change point.
 
     Args:
-        trace (arviz.InferenceData): PyMC trace.
-        date_index (pd.Series): Timestamps for each observation.
-        num_changes (int): Number of change points used in model.
+        trace (arviz.InferenceData): Posterior samples from PyMC with 'mu_1' and 'mu_2'.
 
     Returns:
-        List[pd.Timestamp]: Most probable change point dates.
+        tuple: (mean_before, mean_after, percent_change)
     """
-    taus = trace.posterior["taus"].values  # shape: (chains, draws, num_changes)
-    taus_mean = taus.mean(axis=(0, 1))  # Average over chains and draws
-    tau_indices = np.round(taus_mean).astype(int)
-    change_dates = [date_index[idx] for idx in tau_indices]
-    return change_dates
+    mu_1_samples = trace.posterior["mu_1"].values  # shape: (chains, draws)
+    mu_2_samples = trace.posterior["mu_2"].values
 
-def quantify_impact(trace):
-    """
-    Quantify change in mean parameters before and after the change points.
+    mean_before = mu_1_samples.mean()
+    mean_after = mu_2_samples.mean()
 
-    Args:
-        trace (arviz.InferenceData): Posterior samples from PyMC v4.
-
-    Returns:
-        list of tuples: Each tuple contains (mean_before, mean_after, percent_change)
-    """
-    mu_samples = trace.posterior["mus"].values  # shape: (chains, draws, segments)
-    means = mu_samples.mean(axis=(0, 1))  # segment means
-    impacts = []
-    for i in range(len(means) - 1):
-        before = means[i]
-        after = means[i + 1]
-        pct_change = ((after - before) / abs(before)) * 100 if before != 0 else np.nan
-        impacts.append((before, after, pct_change))
-    return impacts
+    pct_change = ((mean_after - mean_before) / abs(mean_before)) * 100 if mean_before != 0 else float('nan')
+    return mean_before, mean_after, pct_change
