@@ -1,3 +1,14 @@
 CPA-venv/
 *.csv
 *.log
+CPD-venv/
+*.pkl
+*.pkl.gz
+*.nc
+*.npy
+*.json
+*.txt
+*.html
+*.ipynb_checkpoints
+__pycache__/
+*.pyc
