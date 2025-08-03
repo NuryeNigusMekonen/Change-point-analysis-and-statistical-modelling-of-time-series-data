@@ -6,9 +6,11 @@ CPD-venv/
 *.pkl.gz
 *.nc
 *.npy
-*.json
-*.txt
-*.html
 *.ipynb_checkpoints
 __pycache__/
 *.pyc
+models/
+*.h5
+*.pth
+# frontend
+

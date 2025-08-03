@@ -13,27 +13,37 @@ import aesara.tensor as at
 from aesara.tensor import alloc
 import arviz as az
 
-def bayesian_mean_shift_flexible(data, max_cp=10, min_dist=5):
+def bayesian_mean_shift_flexible(data, max_cp=5, min_dist=5):
     """
-    Bayesian model to detect up to max_cp mean change points,
-    with minimum distance between change points to avoid clustering.
+    Bayesian model to detect up to `max_cp` mean change points in a time series.
+
+    Args:
+        data (np.ndarray or pd.Series): The input time series.
+        max_cp (int): Maximum number of change points to allow.
+        min_dist (int): Minimum distance between consecutive change points (in time index).
+
+    Returns:
+        trace (az.InferenceData): Posterior trace.
+        model (pm.Model): PyMC model.
     """
     n = len(data)
     x = np.arange(n)
 
     with pm.Model() as model:
         delta_tau = pm.Exponential("delta_tau", lam=1.0, shape=max_cp)
-        tau_unscaled = pm.Deterministic("tau_unscaled", pt.cumsum(delta_tau))
+        tau_unscaled = pt.cumsum(delta_tau)
 
-        scale_factor = (n - max_cp * min_dist) / tau_unscaled[-1]
+        total_buffer = max_cp * min_dist
+        scale_factor = (n - total_buffer) / tau_unscaled[-1]
         min_dist_tensor = pt.constant(min_dist)
+
         tau_pos = pm.Deterministic(
             "tau_pos",
             pt.clip(
                 pt.round(tau_unscaled * scale_factor + pt.arange(max_cp) * min_dist_tensor),
-                min_dist,
-                n - min_dist,
-            ),
+                0,
+                n - 1,
+            )
         )
 
         mu = pm.Normal("mu", mu=0, sigma=10, shape=max_cp + 1)
@@ -45,7 +55,13 @@ def bayesian_mean_shift_flexible(data, max_cp=10, min_dist=5):
 
         y_obs = pm.Normal("y_obs", mu=mu_obs, sigma=sigma, observed=data)
 
-        trace = pm.sample(1000, tune=1000, target_accept=0.95, chains=4, return_inferencedata=True)
+        trace = pm.sample(
+            draws=2000,
+            tune=2000,
+            chains=4,
+            target_accept=0.95,
+            return_inferencedata=True
+        )
 
     return trace, model
 
