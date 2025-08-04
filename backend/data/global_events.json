@@ -1,6 +1,0 @@
-{
-  "dates": ["2020-01-01", "2020-02-01", "2020-03-01"],
-  "oil_prices": [67.5, 70.2, 65.9],
-  "change_points": [false, true, false],
-  "mean_posterior": [66.0, 69.0, 67.5]
-}

@@ -115,7 +115,12 @@ The frontend will open automatically at `http://localhost:3000` and proxy API re
 Contributions, issues, and feature requests are welcome! Feel free to open issues or submit pull requests.
 
 ---
+## sample images
+![dashboard](screenshoot/dashboard.png)
+![changepoint](screenshoot/changepoint.png)
 
+![price over time](screenshoot/price_over_time.png)
+![trend](screenshoot/trend.png)
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

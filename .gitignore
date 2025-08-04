@@ -14,3 +14,24 @@ models/
 *.pth
 # frontend
 
+frontend/node_modules/
+frontend/build/
+frontend/.env
+frontend/.env.local
+frontend/.env.development
+frontend/.env.test
+frontend/.env.production
+frontend/.cache
+frontend/public/favicon.ico
+frontend/public/logo192.png
+frontend/public/logo512.png
+frontend/public/manifest.json
+frontend/public/robots.txt
+frontend/public/asset-manifest.json
+frontend/public/service-worker.js
+backend/__pycache__/
+backend/*.pyc
+backend/*.pyo
+backend/*.pyd
+
+        
