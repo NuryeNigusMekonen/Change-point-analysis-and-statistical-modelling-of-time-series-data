@@ -17,7 +17,8 @@ def get_prices():
         # Rename columns to lowercase for consistency if needed
         df.columns = [col.lower() for col in df.columns]
 
-        df["date"] = pd.to_datetime(df["date"], errors="coerce")
+        df["date"] = pd.to_datetime(df["date"], format="%d-%b-%y", errors="coerce")
+
         df["price"] = pd.to_numeric(df["price"], errors="coerce")
         df = df.dropna(subset=["date", "price"])
 

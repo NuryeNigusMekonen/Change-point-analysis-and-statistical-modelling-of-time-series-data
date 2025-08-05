@@ -3,7 +3,19 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine
 } from "recharts";
 
-export default function ChartView({ data, changePoints, events = [] }) {
+// Get nearby ±windowSize days
+function getNearbyDates(dateStr, windowSize) {
+  const base = new Date(dateStr);
+  const dates = new Set();
+  for (let i = -windowSize; i <= windowSize; i++) {
+    const d = new Date(base);
+    d.setDate(base.getDate() + i);
+    dates.add(d.toISOString().split("T")[0]);
+  }
+  return dates;
+}
+
+export default function ChartView({ data, changePoints, events = [], windowSize = 30 }) {
   if (!data.length) return <p>Loading price data...</p>;
 
   const cpStyles = {
@@ -13,9 +25,15 @@ export default function ChartView({ data, changePoints, events = [] }) {
   };
 
   const changePointLines = [];
-  ["mean", "trend", "var"].forEach(type => {
-    if (!changePoints[type]) return;
-    changePoints[type].forEach(cpDate => {
+  const cpDatesByType = {
+    mean: new Set(changePoints.mean?.map(d => d) || []),
+    trend: new Set(changePoints.trend?.map(d => d) || []),
+    var: new Set(changePoints.var?.map(d => d) || []),
+  };
+
+  // Draw change point lines
+  Object.keys(cpDatesByType).forEach(type => {
+    cpDatesByType[type].forEach(cpDate => {
       if (data.some(d => d.date === cpDate)) {
         changePointLines.push(
           <ReferenceLine
@@ -37,29 +55,57 @@ export default function ChartView({ data, changePoints, events = [] }) {
     });
   });
 
-  const eventLines = events.map((event, idx) => {
-  console.log("Event:", event.date, event.event);
-  if (data.some(d => d.date === event.date)) {
+  // Tag events with CP type if nearby
+    const dataDates = data.map(d => d.date);
+
+  const highlightedEvents = events.map(event => {
+    const tags = [];
+    let closestDate = null;
+    let minDiff = Infinity;
+
+    Object.entries(cpDatesByType).forEach(([type, cpSet]) => {
+      Array.from(cpSet).forEach(cpDate => {
+        const nearbyDates = getNearbyDates(cpDate, windowSize);
+        if (nearbyDates.has(event.date)) {
+          tags.push(type);
+          // Try to find the closest matching date in actual data
+          dataDates.forEach(date => {
+            if (nearbyDates.has(date)) {
+              const diff = Math.abs(new Date(event.date) - new Date(date));
+              if (diff < minDiff) {
+                minDiff = diff;
+                closestDate = date;
+              }
+            }
+          });
+        }
+      });
+    });
+
+    return tags.length > 0 ? { ...event, tags, chartDate: closestDate || event.date } : null;
+  }).filter(Boolean);
+
+  // Render event lines based on first tag
+  const eventLines = highlightedEvents.map((event, idx) => {
+    const type = event.tags[0]; // Pick first tag to color the line
     return (
       <ReferenceLine
         key={`event-${idx}`}
-        x={event.date}
+        x={event.chartDate}
         stroke="orange"
         strokeDasharray="4 4"
         label={{
           value: event.event,
           position: "top",
-          fill: "orange",
-          fontSize: 10,
-          fontStyle: "italic",
+          angle: -45,
+          fill: cpStyles[type]?.stroke || "orange",
+          fontSize: 12,
+          fontWeight: "bold",
           offset: 15,
         }}
       />
     );
-  }
-  return null;
-});
-
+  });
 
 
   return (
@@ -94,7 +140,7 @@ export default function ChartView({ data, changePoints, events = [] }) {
         <span style={{ color: "red", fontWeight: "bold", marginRight: 15 }}>■ MEAN</span>
         <span style={{ color: "green", fontWeight: "bold", marginRight: 15 }}>■ TREND</span>
         <span style={{ color: "blue", fontWeight: "bold", marginRight: 15 }}>■ VAR</span>
-        <span style={{ color: "orange", fontWeight: "bold" }}>■ EVENT</span>
+        <span style={{ color: "orange", fontWeight: "bold" }}>■ EVENT (near CP)</span>
       </div>
     </div>
   );

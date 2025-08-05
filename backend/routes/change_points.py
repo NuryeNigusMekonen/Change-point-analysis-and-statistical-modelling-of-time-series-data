@@ -24,7 +24,8 @@ def get_change_points(type):
     prices_path = os.path.join(DATA_DIR, "brent_prices.csv")
     df_prices = pd.read_csv(prices_path)
     df_prices.columns = [c.lower() for c in df_prices.columns]
-    df_prices["date"] = pd.to_datetime(df_prices["date"], errors="coerce")
+    df_prices["date"] = pd.to_datetime(df_prices["date"], format="%d-%b-%y", errors="coerce")
+
     df_prices = df_prices.dropna(subset=["date"])
     df_prices = df_prices.sort_values("date").reset_index(drop=True)
 

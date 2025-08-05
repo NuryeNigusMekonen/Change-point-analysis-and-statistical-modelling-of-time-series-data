@@ -3,6 +3,9 @@ import axios from "axios";
 import Header from "./components/Header";
 import ChartView from "./components/ChartView";
 import EventPanel from "./components/EventPanel";
+import DateFilter from "./components/DateFilter";
+
+import "./styles.css";
 
 function App() {
   const [prices, setPrices] = useState([]);
@@ -10,6 +13,7 @@ function App() {
   const [changePoints, setChangePoints] = useState({});
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [windowSize, setWindowSize] = useState(30);
 
   const fetchData = () => {
     const params = {};
@@ -31,34 +35,67 @@ function App() {
   }, [startDate, endDate]);
 
   return (
-    <div style={{ padding: 20, fontFamily: "Arial, sans-serif" }}>
+    <div className="app">
       <Header />
 
-      <div style={{ marginBottom: 20 }}>
+      {/* Date Filters */}
+      <DateFilter
+        dateRange={{ start: startDate, end: endDate }}
+        setDateRange={(updater) => {
+          if (typeof updater === "function") {
+            // If updater is a function (like setDateRange(prev => ...))
+            const prev = { start: startDate, end: endDate };
+            const next = updater(prev);
+            setStartDate(next.start);
+            setEndDate(next.end);
+          } else {
+            // If updater is an object
+            setStartDate(updater.start);
+            setEndDate(updater.end);
+          }
+        }}
+      />
+
+
+      {/* Window Size Selector */}
+      <div className="date-filter-container">
         <label>
-          Start Date:{" "}
-          <input
-            type="date"
-            value={startDate}
-            onChange={e => setStartDate(e.target.value)}
-          />
-        </label>{" "}
-        <label>
-          End Date:{" "}
-          <input
-            type="date"
-            value={endDate}
-            onChange={e => setEndDate(e.target.value)}
-          />
+          Match Window (± days)
+          <select
+            value={windowSize}
+            onChange={e => setWindowSize(Number(e.target.value))}
+            style={{ padding: "8px", borderRadius: "6px", marginTop: "5px" }}
+          >
+            <option value={1}>1</option>
+            <option value={7}>7</option>
+            <option value={14}>14</option>
+            <option value={30}>30</option>
+            <option value={60}>60</option>
+          </select>
         </label>
-        <button onClick={fetchData} style={{ marginLeft: 10, padding: "5px 10px" }}>
+
+        <button
+          onClick={fetchData}
+          style={{
+            padding: "10px 16px",
+            backgroundColor: "#14213d",
+            color: "#fff",
+            border: "none",
+            borderRadius: "6px",
+            fontWeight: "bold",
+            cursor: "pointer",
+            marginTop: "20px",
+            height: "42px"
+          }}
+        >
           Filter
         </button>
       </div>
 
+      {/* Chart + Events */}
       <div style={{ display: "flex", gap: 30 }}>
-        <EventPanel events={events} />
-        <ChartView data={prices} changePoints={changePoints} events={events} />
+        <EventPanel events={events} changePoints={changePoints} windowSize={windowSize} />
+        <ChartView data={prices} changePoints={changePoints} events={events} windowSize={windowSize} />
       </div>
     </div>
   );

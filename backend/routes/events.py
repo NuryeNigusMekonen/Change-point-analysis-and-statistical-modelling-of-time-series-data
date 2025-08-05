@@ -18,7 +18,8 @@ def get_events():
         df.columns = [col.lower() for col in df.columns]
 
         # The event CSV has columns: event, start_date, region, type, notes
-        df["start_date"] = pd.to_datetime(df["start_date"], errors="coerce")
+        df["start_date"] = pd.to_datetime(df["start_date"], format="%Y-%m-%d", errors="coerce")
+
         df = df.dropna(subset=["start_date", "event"])
 
         if start_date:

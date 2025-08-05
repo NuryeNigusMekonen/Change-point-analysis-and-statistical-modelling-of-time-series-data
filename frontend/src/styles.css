@@ -1,27 +1,140 @@
-body {
-  font-family: "Segoe UI", sans-serif;
-  background: #f7f9fc;
-  margin: 0;
-  padding: 0;
-}
-
-.header {
-  background: #14213d;
-  color: #fff;
-  padding: 20px;
+/*  HEADER  */
+.header-container {
   text-align: center;
+  padding: 30px 10px;
+  background-color: #f7f9fb;
+  border-bottom: 2px solid #ddd;
+  margin-bottom: 20px;
 }
 
-.chart-container {
-  padding: 20px;
-  background: white;
-  margin: 20px;
-  border-radius: 8px;
+.branding {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 15px;
 }
 
-.event-panel {
-  padding: 20px;
-  background: #e5e5e5;
-  margin: 20px;
-  border-radius: 8px;
+.company-logo {
+  height: 60px;
+  width: 60px;
+  object-fit: contain;
+  border-radius: 10px;
+  background-color: white;
+  padding: 4px;
+  animation: fadeIn 1s ease-in-out;
 }
+
+.company-name {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #2c3e50;
+  animation: fadeIn 1.2s ease-in-out;
+}
+
+.animated-title {
+  font-size: 2.2rem;
+  font-weight: bold;
+  color: transparent;
+  background: linear-gradient(90deg, #ff8c00, #ff0080, #1e90ff);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: slideIn 1.5s ease-in-out;
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  color: #444;
+  animation: fadeIn 1.7s ease-in-out;
+}
+
+/*  DATE FILTER  */
+.date-filter-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+  background: #ffffff;
+  padding: 15px 30px;
+  border-radius: 8px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
+}
+
+.date-filter-container label {
+  font-weight: 600;
+  color: #333;
+}
+
+.date-filter-container input[type="date"] {
+  margin-left: 8px;
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+  font-size: 0.95rem;
+  transition: border-color 0.3s ease;
+}
+
+.date-filter-container input[type="date"]:focus {
+  border-color: #1e90ff;
+}
+
+/*  ANIMATIONS  */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.date-filter-container {
+  background-color: #ffffff;
+  border: 1px solid #dcdcdc;
+  padding: 15px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.date-filter-container label {
+  font-weight: bold;
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  color: #333;
+}
+
+.date-filter-container input[type="date"] {
+  margin-top: 5px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: #fdfdfd;
+  transition: border-color 0.3s ease;
+}
+
+.date-filter-container input[type="date"]:focus {
+  border-color: #14213d;
+  outline: none;
+}
+
